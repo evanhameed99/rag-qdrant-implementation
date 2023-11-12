@@ -34,7 +34,10 @@ def run():
 
     input_vector = embedding_model.encode(prompt)
     search_result = qdrant_client.client.search(
-        collection_name="test_collection", query_vector=input_vector, limit=3
+        collection_name="test_collection",
+        query_vector=input_vector,
+        limit=10,
+        score_threshold=0.4,
     )
     for result in search_result:
         print("\n ####")
@@ -46,14 +49,10 @@ def run():
         context = "\n".join(r.payload["abstract"] for r in search_result)
     print("CONTEXT =>", context)
 
-    metaprompt = f"""
-    Question: {prompt.strip()}
-
-    Context: 
-    {context.strip()}
-
-    Answer:
-    """
+    metaprompt = "Question: {}\n\n{}Answer:".format(
+        prompt.strip(),
+        "Context:\n{}".format(context.strip()) if len(context.strip()) > 0 else "",
+    )
     print("metaprompt =>", metaprompt)
 
     response = openai.chat.completions.create(
